@@ -1,0 +1,413 @@
+// Função para validar as entradas de valores por usuarios em Controle de Estoque
+
+function validateEntry(){
+
+  // Enviar uma var e setar uma ref 
+
+  var myGoogleSheet=SpreadsheetApp.getActiveSpreadsheet();
+
+  var shUserForm= myGoogleSheet.getSheetByName("User Form");
+
+  var ui=SpreadsheetApp.getUi(); //criando uma instancia de usuario interativa para mostrar alerta
+
+  shUserForm.getRange("E15").setBackground('#FFFFFF');
+  shUserForm.getRange("E18").setBackground('#FFFFFF');
+  shUserForm.getRange("E21").setBackground('#FFFFFF');
+  shUserForm.getRange("E24").setBackground('#FFFFFF');
+  shUserForm.getRange("E27").setBackground('#FFFFFF');
+
+  // Validadando os dados inputados em Data de Movimentação
+  if(shUserForm.getRange("E15").isBlank==true){
+
+      ui.alert("Por favor insira a Data de Movimentação.");
+      shUserForm.getRange("E15").activate();
+      shUserForm.getRange("E15").setBackground('#FF0000');
+      return false;
+
+  }
+
+  // Validadando os dados inputados no Nome do Item
+  if(shUserForm.getRange("E18").isBlank==true){
+
+      ui.alert("Por favor insira o nome do Item.");
+      shUserForm.getRange("E18").activate();
+      shUserForm.getRange("E18").setBackground('#FF0000');
+      return false;
+
+  }
+
+  // Validadando os dados inputados em Quantidade
+  if(shUserForm.getRange("E24").isBlank==true){
+
+      ui.alert("Por favor insira a quantidade");
+      shUserForm.getRange("E24").activate();
+      shUserForm.getRange("E24").setBackground('#FF0000');
+      return false;
+
+  }
+
+  // Validadando os dados inputados em Localidade
+  if(shUserForm.getRange("E24").isBlank==true){
+
+      ui.alert("Por favor Insira a Localidade do Item Meu Drop-Down.");
+      shUserForm.getRange("E24").activate();
+      shUserForm.getRange("E24").setBackground('#FF0000');
+      return false;
+
+  }
+
+  // Validadando os dados inputados em Responsável
+  if(shUserForm.getRange("E27").isBlank==true){
+
+      ui.alert("Por favor Insira o Responsável que está fazendo a movimentação do Item.");
+      shUserForm.getRange("E27").activate();
+      shUserForm.getRange("E27").setBackground('#FF0000');
+      return false;
+
+  }
+
+  return true;
+
+}
+
+//__________________________________________________________________________________________________________________________________________
+
+// Função para enviar os dados para a Base de Dados 
+
+function submitData(){
+
+  // Informando qual será a variavel e setando a referencia para ser ativada no google sheets
+
+  var myGoogleSheet=SpreadsheetApp.getActiveSpreadsheet();
+
+  var shUserForm=myGoogleSheet.getSheetByName("User Form");
+
+  var datasheet=myGoogleSheet.getSheetByName("Estoque");
+
+  // Criar uma instancia de user-interface que utiliza a feature de alert
+
+  var ui=SpreadsheetApp.getUi();
+
+  var response=ui.alert("Enviar", "Você quer realmente enviar esses dados?", ui.ButtonSet.YES_NO);
+
+  // Checando o responsividade do usuario
+
+if(response==ui.Button.NO){
+
+  return; // Saindo dessa função
+
+}
+
+if(validateEntry()==true){
+
+  var blankRow=datasheet.getLastRow()+1;    // Identificando a proxima coluna branca
+
+  // criando o codigo para dar upload de dados no Estoque
+
+  datasheet.getRange(blankRow,1).setValue(shUserForm.getRange("E15").getValue()); // Data de movimentação
+
+  datasheet.getRange(blankRow,2).setValue(shUserForm.getRange("E18").getValue()); // Nome do Item
+
+  datasheet.getRange(blankRow,3).setValue(shUserForm.getRange("E21").getValue()); // Quantidade
+
+  datasheet.getRange(blankRow,4).setValue(shUserForm.getRange("E24").getValue()); // Localidade
+
+  datasheet.getRange(blankRow,5).setValue(shUserForm.getRange("E27").getValue()); // Responsavel
+
+  // Codigo para o upload de datetime e enviado
+
+  datasheet.getRange(blankRow, 6).setValue(new Date()).setNumberFormat('yyyy-mm-dd');
+
+  // Enviado por 
+
+  datasheet.getRange(blankRow,7).setValue(Session.getActiveUser());
+
+  ui.alert('"Nova Informação Salva ' )
+
+  shUserForm.getRange("E15").clear();
+  shUserForm.getRange("E18").clear();
+  shUserForm.getRange("E21").clear();
+  shUserForm.getRange("E24").clear();
+  shUserForm.getRange("E27").clear();
+
+ }
+
+}
+
+//__________________________________________________________________________________________________________________________________________
+
+// Função de registro de pesquisa 
+
+function searchRecord(){
+
+  //declarando a variavel de ativação no google sheets
+
+  var myGoogleSheet=SpreadsheetApp.getActiveSpreadsheet();
+
+  // definindo a variavel de setar o nome do produto como referencia
+
+  var shUserForm=myGoogleSheet.getSheetByName("User Form");
+
+  // definindo a variavel de pesquisa na DB sheet
+
+  var datasheet=myGoogleSheet.getSheetByName("Estoque");
+
+  var str=shUserForm.getRange("E10").getValue();
+
+  // obtendo todos os valores do intervalo usado e atribuindo-o à variável
+
+  var values=datasheet.getDataRange().getValues();
+
+  var valuesFound=false;  //Variavel de armazenamento de valores booleanos 
+
+  for (var i=0; i<values.length; i++)
+  {
+
+    var rowValue=values[i];   //referencia ao que foi guardado no array multi-dimensional enquanto o looping percorre todo o tamanho.
+  
+  // Checando se o primeiro valor guardado é igual a da pesquisa do item
+  
+    if(rowValue[0]==str){
+
+      shUserForm.getRange("E15").setValue(rowValue[0]);
+      shUserForm.getRange("E18").setValue(rowValue[1]);
+      shUserForm.getRange("E21").setValue(rowValue[2]);
+      shUserForm.getRange("E24").setValue(rowValue[3]);
+      shUserForm.getRange("E27").setValue(rowValue[4]);
+      valuesFound=true;
+      return; //saindo do loop criado
+
+    }
+
+  }
+
+  if(valuesFound=false){
+
+    //criando uma instancia de interface para entrelaçar a função de alerta
+
+    var ui=SpreadsheetApp.getUi();
+
+    ui.alert("Sem registro encontrado!");
+
+  }
+
+}
+
+//__________________________________________________________________________________________________________________________________________
+
+// Função para editar os valores guardados
+
+function editRecord(){
+
+  var myGoogleSheet=SpreadsheetApp.getActiveSpreadsheet();
+
+  var shUserForm=myGoogleSheet.getSheetByName("User Form");
+
+  var datasheet=myGoogleSheet.getSheetByName("Estoque");
+
+  var ui=SpreadsheetApp.getUi();
+
+  var response=ui.alert("Editar", 'Você realmente quer editar esses dados?', ui.ButtonSet.YES_NO);
+
+  if(response==ui.Button.NO){
+
+    return; // sai da função.
+
+  }
+
+  var str=shUserForm.getRange("E10").getValue();   // pegando o item de pesquisa 
+
+  var values=datasheet.getDataRange().getValues();
+
+  var valuesFound=false;
+
+  for(var i=0; i<values.length; i++){
+
+    var rowValue=values[i];
+
+    if(rowValue[0]==str){
+
+      var iRow=i+1;
+
+  datasheet.getRange(iRow,2).setValue(shUserForm.getRange("E18").getValue()); //Validação do Nome do produto.
+
+  datasheet.getRange(iRow,3).setValue(shUserForm.getRange("E21").getValue()); //Validação da Quantidade
+
+  datasheet.getRange(iRow,4).setValue(shUserForm.getRange("E24").getValue()); //Validação do Destino
+
+  datasheet.getRange(iRow,5).setValue(shUserForm.getRange("E27").getValue()); //Validação do Responsavel
+
+  // Enviar (ON)
+
+  datasheet.getRange(iRow,6).setValue(new Date()).setNumberFormat('yyyy-mm-dd h:mm'); 
+
+  // Enviar (Por)
+
+  datasheet.getRange(iRow,7).setValue(Session.getActiveUser().getEmail());
+
+  ui.alert("Dados Enviados!");
+
+  shUserForm.getRange("E10").clear();
+
+  shUserForm.getRange("E15").clear();
+
+  shUserForm.getRange("E18").clear();
+
+  shUserForm.getRange("E21").clear();
+
+  shUserForm.getRange("E24").clear();
+
+  shUserForm.getRange("E27").clear();
+
+  valuesFound=true;
+
+  return;
+
+  }
+
+  }
+
+  if(valuesFound==false){
+
+    ui.alert("O envio Falhou!");
+
+  }
+
+}
+
+
+//__________________________________________________________________________________________________________________________________________
+
+
+  // Função para limpar o Formulario
+
+  function clearform(){
+
+    var myGoogleSheet=SpreadsheetApp.getActiveSpreadsheet();
+
+    var shUserForm=myGoogleSheet.getSheetByName("User Form");
+
+    var ui=SpreadsheetApp.getUi();
+
+    var response=ui.alert("Confirmação de Limpeza", "Você realmente quer limpar o formulario?", ui.ButtonSet.YES_NO);
+
+    if(response==ui.Button.NO){
+
+    return; // 
+
+  }  
+
+  shUserForm.getRange("E10").clear();   // Pesquisa - ID do Produto
+
+  shUserForm.getRange("E15").clear();   // Codigo do Produto
+
+  shUserForm.getRange("E18").clear();   // Nome do Produto
+
+  shUserForm.getRange("E21").clear();   // Quantidade
+
+  shUserForm.getRange("E24").clear();   // Destino
+
+  shUserForm.getRange("E27").clear();   // Responsavel
+
+
+
+
+
+  // Atribuir cor padrão
+
+  shUserForm.getRange("E10").setBackground('#FFFFFF'); // Pesquisa - ID do Produto
+
+  shUserForm.getRange("E115").setBackground('#FFFFFF'); // Codigo do Produto
+
+  shUserForm.getRange("E18").setBackground('#FFFFFF'); // Nome do Produto
+
+  shUserForm.getRange("E21").setBackground('#FFFFFF'); // Quantidade
+
+  shUserForm.getRange("E24").setBackground('#FFFFFF'); // Destino
+
+  shUserForm.getRange("E27").setBackground('#FFFFFF'); // Responsavel
+
+  return true;
+
+  }
+
+
+// Função para deletar os dados existentes
+
+function deleteRow(){
+
+  var myGoogleSheet=SpreadsheetApp.getActiveSpreadsheet();
+
+  var shUserForm=myGoogleSheet.getSheetByName("User Form");
+
+  var datasheet=myGoogleSheet.getSheetByName("Estoque");
+
+  var ui=SpreadsheetApp.getUi();
+
+  var response=ui.alert("Excluir", 'Você realmente quer excluir esses dados?', ui.ButtonSet.YES_NO);
+
+  if(response==ui.Button.NO){
+
+    return; // sai da função.
+
+  }
+
+  var str=shUserForm.getRange("E10").getValue();   // pegando o item de pesquisa 
+
+  var values=datasheet.getDataRange().getValues();
+
+  var valuesFound=false;
+
+  for(var i=0; i<values.length; i++){
+
+    var rowValue=values[i];
+
+    if(rowValue[0]==str){
+
+      var iRow=i+1;
+
+      datasheet.deleteRow(iRow);
+
+      ui.alert("Dados Deletados!");
+
+    shUserForm.getRange("E10").clear();
+
+    shUserForm.getRange("E15").clear();
+
+    shUserForm.getRange("E18").clear();
+
+    shUserForm.getRange("E21").clear();
+
+    shUserForm.getRange("E24").clear();
+
+    shUserForm.getRange("E27").clear();
+
+    valuesFound=true;
+
+    return;
+
+    }
+    
+  }
+
+  if(valuesFound==false){
+
+    ui.alert("O envio Falhou!");
+
+  }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
